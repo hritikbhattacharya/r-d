@@ -1,11 +1,29 @@
-FROM node:latest 
+# Stage 1: Build the React application
+FROM node:14 AS build
 
-WORKDIR /usr/src/app 
+# Set the working directory
+WORKDIR /app
 
-COPY package*.json ./ 
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
-RUN npm install 
+# Install dependencies
+RUN npm install
 
+# Copy the rest of the application code
 COPY . .
 
-CMD ["npm", "start"] 
+# Build the React application
+RUN npm run build
+
+# Stage 2: Serve the React application using Nginx
+FROM nginx:alpine
+
+# Copy the build output to the Nginx HTML directory
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
